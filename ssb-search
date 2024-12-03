@@ -5,6 +5,8 @@ import argparse
 import configparser
 import requests
 import urllib3
+import urllib.parse
+
 from getpass import getpass
 from requests.utils import cookiejar_from_dict
 
@@ -72,7 +74,8 @@ def create_session(session_id):
 def search(ssb_appliance, logspace_name, search_term, from_timestamp, to_timestamp,  offset, limit , session = None):
 	if session is None:
 		sys.exit("NO valid session found. Please log in first!")
-	search_url = f"https://{ssb_appliance}/api/1/search/logspace/filter/{logspace_name}?from={from_timestamp}&to={to_timestamp}&search_expression={search_term}&offset={offset}&limit={limit}"
+	url_encoded_search_term = urllib.parse.quote_plus(search_term)
+	search_url = f"https://{ssb_appliance}/api/1/search/logspace/filter/{logspace_name}?from={from_timestamp}&to={to_timestamp}&search_expression={url_encoded_search_term}&offset={offset}&limit={limit}"
 	search_response = session.get(search_url, verify=False)
 	return search_response.json()
 
@@ -103,8 +106,9 @@ def main():
 
 	search_results = search(SSB_APPLIANCE, LOGSPACE_NAME, SEARCH_TERM, FROM_TIMESTAMP, TO_TIMESTAMP, OFFSET, LIMIT, SESSION)
 
-	if len(search_results['result']) == 0:
+	if search_results['result'] is None or len(search_results['result']) == 0:
 		sys.exit("Search term not found!")
+		
 	for search_result in search_results['result']:
 		print(f"{search_result['message']}")
 	logout(SSB_APPLIANCE,SESSION)
